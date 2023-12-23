@@ -114,10 +114,15 @@ socket.on('roomData', ({room, users}) => {
     sidebar.appendChild(heading);
     users.forEach(user => {
         const userElement = document.createElement('div');
+        userElement.classList.add('user-element');
+        const greenDot = document.createElement('div');
+        greenDot.classList.add('online-green-dot');
+
         const userName = document.createElement('p');
         userName.classList.add('username');
         userName.innerHTML = user.username;
 
+        userElement.appendChild(greenDot);
         userElement.appendChild(userName);
         sidebar.appendChild(userElement);
     });
