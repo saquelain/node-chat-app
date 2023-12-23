@@ -1,5 +1,6 @@
 const socket = io()
-
+var typing = false;
+var timeout = undefined;
 // Elements
 const $messageForm = document.querySelector('#message-form')
 const $messageFormInput = $messageForm.querySelector('input')
@@ -38,6 +39,44 @@ const autoscroll = () => {
     }
 }
 
+function timeoutFunction(){
+    typing = false;
+    socket.emit("nottyping", { username, room });
+}
+
+function onKeyDownNotEnter(){
+    if(typing == false) {
+      typing = true
+      socket.emit("typing", { username, room });
+      timeout = setTimeout(timeoutFunction, 2000);
+    } else {
+      clearTimeout(timeout);
+      timeout = setTimeout(timeoutFunction, 2000);
+    } 
+}
+
+$messageFormInput.addEventListener('input', ()=>{
+    onKeyDownNotEnter();
+})
+
+socket.on("typing...", (user) => {
+    console.log(`${user.username} is typing...`);
+
+    // insert typing... message to all users
+    const typingInfo = document.createElement('p');
+    typingInfo.classList.add('typinginfo');
+    typingInfo.innerHTML = `<strong>${user.username}</strong> is typing...`;
+    $messages.insertAdjacentElement("afterend", typingInfo);
+});
+
+socket.on("nottyping...", (user) => {
+    console.log(`${user.username} stopped typing...`);
+
+    // remove typing... message from all users
+    const typingInfo = document.querySelector('.typinginfo');
+    typingInfo.remove();
+})
+
 socket.on('message', (message) => {
     console.log(message)
     const html = Mustache.render(messageTemplate, {
@@ -61,11 +100,27 @@ socket.on('locationMessage', (message) => {
 })
 
 socket.on('roomData', ({room, users}) => {
-    const html = Mustache.render(sidebarTemplate, {
-        room, 
-        users
-    })
-    document.querySelector('#sidebar').innerHTML = html
+    // const html = Mustache.render(sidebarTemplate, {
+    //     room, 
+    //     users
+    // })
+    // document.querySelector('#sidebar').innerHTML = html
+    const sidebar = document.querySelector("#sidebar");
+    sidebar.innerHTML = '';
+    const heading = document.createElement('h2');
+    heading.textContent = 'Users';
+    heading.style.alignSelf = 'center'
+    heading.style.marginBottom = '20px'
+    sidebar.appendChild(heading);
+    users.forEach(user => {
+        const userElement = document.createElement('div');
+        const userName = document.createElement('p');
+        userName.classList.add('username');
+        userName.innerHTML = user.username;
+
+        userElement.appendChild(userName);
+        sidebar.appendChild(userElement);
+    });
 })
 
 $messageForm.addEventListener('submit', (e) => {
@@ -111,4 +166,4 @@ socket.emit('join', { username, room }, (error) => {
         alert(error)
         location.href = '/'
     }
-})
+});

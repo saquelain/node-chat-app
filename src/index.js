@@ -65,6 +65,15 @@ io.on("connection", (socket) => {
     callback();
   });
 
+  socket.on('typing', (user)=>{
+    socket.broadcast.to(user.room).emit("typing...", user);
+  })
+
+  socket.on('nottyping', (user) => {
+    socket.broadcast.to(user.room).emit("nottyping...", user);
+  })
+
+
   socket.on("disconnect", () => {
     const user = removeUser(socket.id);
 
